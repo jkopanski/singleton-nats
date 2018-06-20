@@ -33,7 +33,8 @@ module Data.Nat (
 
 import Data.Singletons.TH
 import Data.Singletons.Prelude
-import qualified GHC.TypeLits as Lit
+import qualified GHC.TypeNats as TN
+import Numeric.Natural (Natural)
 
 $(singletons [d|
   data Nat = Z | S Nat deriving (Eq, Show, Ord)
@@ -80,14 +81,12 @@ instance Eq (SNat n) where
 instance Ord (SNat n) where
   compare _ _ = EQ
 
-{-| Converts a runtime 'Integer' to an existentially wrapped 'Nat'. Returns 'Nothing' if
-the argument is negative -}
-someNatVal :: Integer -> Maybe (SomeSing Nat)
-someNatVal n = case Lit.someNatVal n of
-  Just (Lit.SomeNat (_ :: Proxy n)) -> Just (SomeSing (sFromInteger (sing :: Sing n)))
-  Nothing -> Nothing
+{-| Converts a runtime 'Natural' to an existentially wrapped 'Nat'. -}
+someNatVal :: Natural -> SomeSing Nat
+someNatVal n = case TN.someNatVal n of
+  TN.SomeNat (_ :: Proxy n) -> SomeSing (sFromInteger (sing :: Sing n))
 
-{-| Provides a shorthand for 'Nat'-s using "GHC.TypeLits", for example:
+{-| Provides a shorthand for 'Nat'-s using "GHC.TypeNats", for example:
 
 >>> :kind! Lit 3
 Lit 3 :: Nat
@@ -96,7 +95,7 @@ Lit 3 :: Nat
 
 type family Lit n where
   Lit 0 = Z
-  Lit n = S (Lit (n Lit.- 1))
+  Lit n = S (Lit (n TN.- 1))
 $(genDefunSymbols [''Lit])
 
 type SLit n = Sing (Lit n)
@@ -109,5 +108,5 @@ SS (SS (SS (SS (SS SZ))))
 
 -}
 
-sLit :: forall (n :: Lit.Nat). SingI (Lit n) => Sing (Lit n)
+sLit :: forall (n :: TN.Nat). SingI (Lit n) => Sing (Lit n)
 sLit = sing
